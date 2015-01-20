@@ -9,7 +9,7 @@ import threading
 
 LOG_FORMAT = '<%(levelname)s> %(asctime)s: %(message)s'
 logging.basicConfig(filename='syclover-auto-weibo.log',
-                    level=logging.DEBUG,
+                    level=logging.INFO,
                     format=LOG_FORMAT)
 
 APP_KEY = os.getenv('APP_KEY')
@@ -71,25 +71,20 @@ def repost(params):
 
 
 def check_atme():
-    statuses_mentions_url = 'https://api.weibo.com/2/statuses/mentions.json'
+    statuses_mentions_url = 'https://api.weibo.com/2/statuses/mentions/ids.json'
     data = get_token()
     access_token = data['access_token']
+    since_id = int(REDIS.get('atme_since_id') or 0)
+    logging.info('[@ in status] since_id: %s' % since_id)
     params = {
         'source': APP_KEY,
         'access_token': access_token,
-        'filter_by_type': 0,
+        'since_id': since_id
     }
     r = requests.get(statuses_mentions_url, params=params)
-    data = r.json()['statuses']
-    if data:
-        data = data[0]
-        text = data['text']
-        text_id = data['id']
-        replied_id = REDIS.get('replied_id')
-        logging.info('[status at] text_id:%s text:%s replied_id:%s' % (text_id, text, replied_id))
-        if not replied_id:
-            REDIS.set('replied_id', text_id)
-        if text_id != replied_id:
+    mentions_ids = r.json()['statuses']
+    if mentions_ids:
+        for text_id in mentions_ids:
             params = {
                 'source': APP_KEY,
                 'access_token': access_token,
@@ -97,16 +92,16 @@ def check_atme():
                 'id': text_id,
             }
 
+            logging.info('[REPOST] @ in status, status_id: %s' % text_id)
             threading.Thread(target=repost, args=(params,)).start()
-            REDIS.set('replied_id', text_id)
+        REDIS.set('atme_since_id', mentions_ids[0])
+        logging.info('[@ in status] new_since_id: %s' % mentions_ids[0])
 
 
 def check_comment():
     comments_to_me_url = 'https://api.weibo.com/2/comments/to_me.json'
-    since_id = REDIS.get('since_id')
-    if not since_id:
-        REDIS.set('since_id', 0)
-        since_id = 0
+    since_id = int(REDIS.get('comment_since_id') or 0)
+    logging.info('[@ in comment] since_id:%s' % since_id)
     data = get_token()
     params = {
         'source': APP_KEY,
@@ -133,19 +128,20 @@ def check_comment():
                      reverse=True)
 
     if results:
-        logging.info('[comment at] since_id:%s new_since_id:%s' % (since_id, results[0][0]))
         for i in results:
             params = {
                 'source': APP_KEY,
                 'access_token': data['access_token'],
                 'id': i[1]['wid'],
                 'is_comment': 3,
-                'status': 'hhh'
+                # 'status': 'Repost!'
             }
             threading.Thread(target=repost, args=(params,)).start()
+            logging.info('[REPOST] @ in comment, status_id: %s' % i[1]['wid'])
 
-        REDIS.set('since_id', results[0][0])
+        REDIS.set('comment_since_id', results[0][0])
+        logging.info('[@ in comment] new_since_id: %s' % results[0][0])
 
 if __name__ == '__main__':
-    #check_atme()
+    check_atme()
     check_comment()
