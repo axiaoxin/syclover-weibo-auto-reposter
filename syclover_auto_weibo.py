@@ -20,10 +20,22 @@ PASSWORD = os.getenv('PASSWORD')
 
 REPOST_URL = 'https://api.weibo.com/2/statuses/repost.json'
 
-REDIS_HOST = os.getenv('REDIS_HOST') or 'localhost'
-REDIS_PORT = os.getenv('REDIS_PORT') or 6379
+def load_reposted_id(id_type):
+    if id_type == 'atme_since_id':
+        with open('./.atme_since_id') as f:
+            return int(f.read() or 0)
+    elif id_type == 'comment_since_id':
+        with open('./.comment_since_id') as f:
+            return int(f.read())
 
-REDIS = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=0)
+def save_reposted_id(id_type, id):
+    if id_type == 'atme_since_id':
+        with open('./.atme_since_id', 'w') as f:
+            f.write(id)
+    elif id_type == 'comment_since_id':
+        with open('./.comment_since_id', 'w') as f:
+            f.write(id)
+
 
 def auth():
     url = "https://api.weibo.com/oauth2/authorize"
