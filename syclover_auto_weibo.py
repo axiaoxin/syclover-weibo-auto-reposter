@@ -7,8 +7,10 @@ import requests
 import logging
 import threading
 
+BASE_DIR = os.path.realpath(os.path.dirname(__file__))
+
 LOG_FORMAT = '<%(levelname)s> %(asctime)s: %(message)s'
-logging.basicConfig(filename='syclover-auto-weibo.log',
+logging.basicConfig(filename=os.path.join(BASE_DIR, 'syclover-auto-weibo.log'),
                     level=logging.INFO,
                     format=LOG_FORMAT)
 
@@ -22,18 +24,18 @@ REPOST_URL = 'https://api.weibo.com/2/statuses/repost.json'
 
 def load_reposted_id(id_type):
     if id_type == 'atme_since_id':
-        with open('./.atme_since_id') as f:
+        with open(os.path.join(BASE_DIR, '.atme_since_id')) as f:
             return int(f.read().decode('utf-8') or 0)
     elif id_type == 'comment_since_id':
-        with open('./.comment_since_id') as f:
+        with open(os.path.join(BASE_DIR, '.comment_since_id')) as f:
             return int(f.read().decode('utf-8') or 0)
 
 def save_reposted_id(id_type, since_id):
     if id_type == 'atme_since_id':
-        with open('./.atme_since_id', 'w') as f:
+        with open(os.path.join(BASE_DIR, '.atme_since_id'), 'w') as f:
             f.write(str(since_id).encode('utf-8'))
     elif id_type == 'comment_since_id':
-        with open('./.comment_since_id', 'w') as f:
+        with open(os.path.join(BASE_DIR, '.comment_since_id'), 'w') as f:
             f.write(str(since_id).encode('utf-8'))
 
 
