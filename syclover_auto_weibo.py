@@ -2,7 +2,6 @@
 # coding: utf-8
 from __future__ import unicode_literals
 import os
-import redis
 import requests
 import logging
 import threading
@@ -23,18 +22,18 @@ REPOST_URL = 'https://api.weibo.com/2/statuses/repost.json'
 def load_reposted_id(id_type):
     if id_type == 'atme_since_id':
         with open('./.atme_since_id') as f:
-            return int(f.read() or 0)
+            return int(f.read().decode('utf-8') or 0)
     elif id_type == 'comment_since_id':
         with open('./.comment_since_id') as f:
-            return int(f.read())
+            return int(f.read().decode('utf-8') or 0)
 
-def save_reposted_id(id_type, id):
+def save_reposted_id(id_type, since_id):
     if id_type == 'atme_since_id':
         with open('./.atme_since_id', 'w') as f:
-            f.write(id)
+            f.write(str(since_id).encode('utf-8'))
     elif id_type == 'comment_since_id':
         with open('./.comment_since_id', 'w') as f:
-            f.write(id)
+            f.write(str(since_id).encode('utf-8'))
 
 
 def auth():
@@ -86,7 +85,7 @@ def check_atme():
     statuses_mentions_url = 'https://api.weibo.com/2/statuses/mentions/ids.json'
     data = get_token()
     access_token = data['access_token']
-    since_id = int(REDIS.get('atme_since_id') or 0)
+    since_id = load_reposted_id('atme_since_id')
     logging.info('[@ in status] since_id: %s' % since_id)
     params = {
         'source': APP_KEY,
@@ -106,13 +105,13 @@ def check_atme():
 
             logging.info('[REPOST] @ in status, status_id: %s' % text_id)
             threading.Thread(target=repost, args=(params,)).start()
-        REDIS.set('atme_since_id', mentions_ids[0])
+        save_reposted_id('atme_since_id', mentions_ids[0])
         logging.info('[@ in status] new_since_id: %s' % mentions_ids[0])
 
 
 def check_comment():
     comments_to_me_url = 'https://api.weibo.com/2/comments/to_me.json'
-    since_id = int(REDIS.get('comment_since_id') or 0)
+    since_id = load_reposted_id('comment_since_id')
     logging.info('[@ in comment] since_id:%s' % since_id)
     data = get_token()
     params = {
@@ -151,9 +150,10 @@ def check_comment():
             threading.Thread(target=repost, args=(params,)).start()
             logging.info('[REPOST] @ in comment, status_id: %s' % i[1]['wid'])
 
-        REDIS.set('comment_since_id', results[0][0])
+        save_reposted_id('comment_since_id', results[0][0])
         logging.info('[@ in comment] new_since_id: %s' % results[0][0])
 
 if __name__ == '__main__':
     check_atme()
     check_comment()
+    logging.debug('=' * 48)
