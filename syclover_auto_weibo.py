@@ -78,12 +78,11 @@ def get_token():
     return data
 
 
-def repost(params, delay=3):
-    time.sleep(delay)
+def repost(params):
     requests.post(REPOST_URL, data=params)
 
 
-def check_atme():
+def check_atme(delay=3):
     statuses_mentions_url = 'https://api.weibo.com/2/statuses/mentions/ids.json'
     data = get_token()
     access_token = data['access_token']
@@ -106,12 +105,13 @@ def check_atme():
             }
 
             logging.info('[REPOST] @ in status, status_id: %s' % text_id)
+            time.sleep(delay)
             threading.Thread(target=repost, args=(params,)).start()
         save_reposted_id('atme_since_id', mentions_ids[0])
         logging.info('[@ in status] new_since_id: %s' % mentions_ids[0])
 
 
-def check_comment():
+def check_comment(delay=3):
     comments_to_me_url = 'https://api.weibo.com/2/comments/to_me.json'
     since_id = load_reposted_id('comment_since_id')
     logging.info('[@ in comment] since_id:%s' % since_id)
@@ -149,6 +149,7 @@ def check_comment():
                 'is_comment': 3,
                 # 'status': 'Repost!'
             }
+            time.sleep(delay)
             threading.Thread(target=repost, args=(params,)).start()
             logging.info('[REPOST] @ in comment, status_id: %s' % i[1]['wid'])
 
