@@ -2,6 +2,7 @@
 # coding: utf-8
 from __future__ import unicode_literals
 import os
+import time
 import requests
 import logging
 import threading
@@ -77,7 +78,8 @@ def get_token():
     return data
 
 
-def repost(params):
+def repost(params, delay=3):
+    time.sleep(delay)
     requests.post(REPOST_URL, data=params)
 
 
