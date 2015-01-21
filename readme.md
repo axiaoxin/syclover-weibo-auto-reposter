@@ -18,4 +18,4 @@
 
 添加每五分钟检查一次是否有人@：
 
-    */5 * * * * python PATH/TO/syclover_auto_weibo.py
+    */5 * * * * python /PATH/TO/syclover_auto_weibo.py
