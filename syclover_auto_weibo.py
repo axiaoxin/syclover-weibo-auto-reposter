@@ -6,6 +6,7 @@ import time
 import requests
 import logging
 import threading
+from collections import OrderedDict
 
 BASE_DIR = os.path.realpath(os.path.dirname(__file__))
 
@@ -24,6 +25,12 @@ ACCOUNT = os.getenv('ACCOUNT')
 PASSWORD = os.getenv('PASSWORD')
 
 REPOST_URL = 'https://api.weibo.com/2/statuses/repost.json'
+
+with open(os.path.join(BASE_DIR, '.syclovers')) as f:
+    SYCLOVERS = [uid.strip() for uid in f]
+
+def is_syclover(uid):
+    return uid in SYCLOVERS
 
 def load_reposted_id(id_type):
     if id_type == 'atme_since_id':
@@ -138,32 +145,32 @@ def check_comment(delay=3):
         r = SESSION.get(comments_mentions_url, params=params)
         comments = r.json()['comments']
 
-    results = {}
+    results = OrderedDict()
     for a_comment in comments:
         results[a_comment['id']] = {
             'text': a_comment['text'],
             'wid': a_comment['status']['id'],
             'weibo': a_comment['status']['text'],
+            'uid': a_comment['user']['id'],
         }
-    results = sorted(results.iteritems(),
-                     key=lambda d: d[0],
-                     reverse=True)
 
     if results:
-        for i in results:
+        for _, value_dict in results.iteritems():
+            if not is_syclover(value_dict['uid']):
+                continue
             params = {
                 'source': APP_KEY,
                 'access_token': data['access_token'],
-                'id': i[1]['wid'],
+                'id': value_dict['wid'],
                 'is_comment': 3,
                 # 'status': 'Repost!'
             }
             time.sleep(delay)
             threading.Thread(target=repost, args=(params,)).start()
-            logging.info('[REPOST] @ in comment, status_id: %s' % i[1]['wid'])
+            logging.info('[REPOST] @ in comment, status_id: %s' % value_dict['wid'])
 
-        save_reposted_id('comment_since_id', results[0][0])
-        logging.info('[@ in comment] new_since_id: %s' % results[0][0])
+        save_reposted_id('comment_since_id', results.keys()[0])
+        logging.info('[@ in comment] new_since_id: %s' % results.keys()[0])
 
 if __name__ == '__main__':
     check_atme()
