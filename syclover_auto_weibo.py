@@ -29,8 +29,10 @@ REPOST_URL = 'https://api.weibo.com/2/statuses/repost.json'
 with open(os.path.join(BASE_DIR, '.syclovers')) as f:
     SYCLOVERS = [uid.strip() for uid in f]
 
+
 def is_syclover(uid):
-    return uid in SYCLOVERS
+    return str(uid) in SYCLOVERS
+
 
 def load_reposted_id(id_type):
     if id_type == 'atme_since_id':
@@ -39,6 +41,7 @@ def load_reposted_id(id_type):
     elif id_type == 'comment_since_id':
         with open(os.path.join(BASE_DIR, '.comment_since_id')) as f:
             return int(f.read().decode('utf-8') or 0)
+
 
 def save_reposted_id(id_type, since_id):
     if id_type == 'atme_since_id':
@@ -99,7 +102,7 @@ def repost(params):
 
 
 def check_atme(delay=3):
-    statuses_mentions_url = 'https://api.weibo.com/2/statuses/mentions/ids.json'
+    statuses_mentions_url = 'https://api.weibo.com/2/statuses/mentions.json'
     data = get_token()
     access_token = data['access_token']
     since_id = load_reposted_id('atme_since_id')
@@ -110,21 +113,24 @@ def check_atme(delay=3):
         'since_id': since_id
     }
     r = SESSION.get(statuses_mentions_url, params=params)
-    mentions_ids = r.json()['statuses']
-    if mentions_ids:
-        for text_id in mentions_ids:
+    statuses = r.json()['statuses']
+    if statuses:
+        for status in statuses:
+            if not is_syclover(status['user']['id']):
+                continue
             params = {
                 'source': APP_KEY,
                 'access_token': access_token,
                 'is_comment': 3,
-                'id': text_id,
+                'id': status['id'],
             }
 
-            logging.info('[REPOST] @ in status, status_id: %s' % text_id)
+            logging.info('[REPOST] @ in status, status_id: %s, uid: %s' %
+                         (status['id'], status['user']['id']))
             time.sleep(delay)
             threading.Thread(target=repost, args=(params,)).start()
-        save_reposted_id('atme_since_id', mentions_ids[0])
-        logging.info('[@ in status] new_since_id: %s' % mentions_ids[0])
+        save_reposted_id('atme_since_id', statuses[0]['id'])
+        logging.info('[@ in status] new_since_id: %s' % statuses[0]['id'])
 
 
 def check_comment(delay=3):
@@ -167,7 +173,8 @@ def check_comment(delay=3):
             }
             time.sleep(delay)
             threading.Thread(target=repost, args=(params,)).start()
-            logging.info('[REPOST] @ in comment, status_id: %s' % value_dict['wid'])
+            logging.info('[REPOST] @ in comment, status_id: %s, uid: %s' %
+                         (value_dict['wid'], value_dict['uid']))
 
         save_reposted_id('comment_since_id', results.keys()[0])
         logging.info('[@ in comment] new_since_id: %s' % results.keys()[0])
