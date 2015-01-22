@@ -63,7 +63,7 @@ def auth():
         'Referer': auth_url,
         'Content-Type': 'application/x-www-form-urlencoded'
     }
-    r = requests.post(url, data=post_data, headers=headers)
+    r = SESSION.post(url, data=post_data, headers=headers)
     code = r.url.split('=')[1]
     return code
 
@@ -78,7 +78,7 @@ def get_token():
         'code': code,
         'redirect_uri': REDIRECT_URI,
     }
-    r = requests.post(url, data=post_data)
+    r = SESSION.post(url, data=post_data)
     data = r.json()
     return data
 
@@ -102,7 +102,7 @@ def check_atme(delay=3):
         'access_token': access_token,
         'since_id': since_id
     }
-    r = requests.get(statuses_mentions_url, params=params)
+    r = SESSION.get(statuses_mentions_url, params=params)
     mentions_ids = r.json()['statuses']
     if mentions_ids:
         for text_id in mentions_ids:
@@ -130,12 +130,12 @@ def check_comment(delay=3):
         'access_token': data['access_token'],
         'since_id': since_id
     }
-    r = requests.get(comments_to_me_url, params=params)
+    r = SESSION.get(comments_to_me_url, params=params)
     comments = r.json()['comments']
 
     if not comments:
         comments_mentions_url = 'https://api.weibo.com/2/comments/mentions.json'
-        r = requests.get(comments_mentions_url, params=params)
+        r = SESSION.get(comments_mentions_url, params=params)
         comments = r.json()['comments']
 
     results = {}
