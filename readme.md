@@ -21,6 +21,10 @@
 
 在crontab中配置好微博帐号信息的环境变量设置每5分钟检测转发一次就可以辣.只会转发`.syclovers`文件中的ID@的微博。
 
+安装依赖：
+
+    sudo pip install -Ur requirements.txt
+
 设置crontab：
 
     crontab -e
