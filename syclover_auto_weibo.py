@@ -27,7 +27,7 @@ PASSWORD = os.getenv('PASSWORD')
 REPOST_URL = 'https://api.weibo.com/2/statuses/repost.json'
 REPOST_PHRASE = '转一个'
 
-with open(os.path.join(BASE_DIR, '.syclovers')) as f:
+with open(os.path.join(BASE_DIR, 'syclovers')) as f:
     SYCLOVERS = [uid.strip() for uid in f]
 
 
