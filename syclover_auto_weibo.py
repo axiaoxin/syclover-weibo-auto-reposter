@@ -25,6 +25,7 @@ ACCOUNT = os.getenv('ACCOUNT')
 PASSWORD = os.getenv('PASSWORD')
 
 REPOST_URL = 'https://api.weibo.com/2/statuses/repost.json'
+REPOST_PHRASE = '转一个'
 
 with open(os.path.join(BASE_DIR, '.syclovers')) as f:
     SYCLOVERS = [uid.strip() for uid in f]
@@ -118,6 +119,8 @@ def check_atme(delay=3):
         for status in statuses:
             if not is_syclover(status['user']['id']):
                 continue
+            if REPOST_PHRASE not in status['text']:
+                continue
             params = {
                 'source': APP_KEY,
                 'access_token': access_token,
@@ -163,6 +166,8 @@ def check_comment(delay=3):
     if results:
         for _, value_dict in results.iteritems():
             if not is_syclover(value_dict['uid']):
+                continue
+            if REPOST_PHRASE not in value_dict['text']:
                 continue
             params = {
                 'source': APP_KEY,
