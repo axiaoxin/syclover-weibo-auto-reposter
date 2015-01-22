@@ -9,8 +9,11 @@ import threading
 
 BASE_DIR = os.path.realpath(os.path.dirname(__file__))
 
+SESSION = requests.session()
+SESSION.mount('https://', requests.adapters.HTTPAdapter(max_retries=3))
+
 LOG_FORMAT = '<%(levelname)s> %(asctime)s: %(message)s'
-logging.basicConfig(filename=os.path.join(BASE_DIR, 'syclover-auto-weibo.log'),
+logging.basicConfig(filename=os.path.join(BASE_DIR, '.syclover-auto-weibo.log'),
                     level=logging.INFO,
                     format=LOG_FORMAT)
 
@@ -81,7 +84,11 @@ def get_token():
 
 
 def repost(params):
-    requests.post(REPOST_URL, data=params)
+    resp = SESSION.post(REPOST_URL, data=params)
+    try:
+        resp.raise_for_status()
+    except Exception as e:
+        logging.debug(str(e))
 
 
 def check_atme(delay=3):
@@ -161,4 +168,4 @@ def check_comment(delay=3):
 if __name__ == '__main__':
     check_atme()
     check_comment()
-    logging.debug('=' * 48)
+    logging.info('=' * 48)
