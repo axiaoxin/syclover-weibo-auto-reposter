@@ -121,13 +121,16 @@ def check_atme(delay=3):
                 continue
             if REPOST_PHRASE not in status['text']:
                 continue
+            repost_text = status['text'].split('//@', 1)
+            if len(repost_text) == 2 and REPOST_PHRASE in repost_text[1]:
+                continue
             params = {
                 'source': APP_KEY,
                 'access_token': access_token,
                 'is_comment': 3,
                 'id': status['id'],
+                'status': REPOST_PHRASE
             }
-
             logging.info('[REPOST] @ in status, status_id: %s, uid: %s' %
                          (status['id'], status['user']['id']))
             time.sleep(delay)
@@ -174,7 +177,7 @@ def check_comment(delay=3):
                 'access_token': data['access_token'],
                 'id': value_dict['wid'],
                 'is_comment': 3,
-                # 'status': 'Repost!'
+                'status': REPOST_PHRASE
             }
             time.sleep(delay)
             threading.Thread(target=repost, args=(params,)).start()
