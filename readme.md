@@ -35,11 +35,11 @@
 
 添加内容：
 
-    PASSWORD=your_W3!b0_Mim4
-    ACCOUNT=your_weibo_zh4ngha0
-    REDIRECT_URI=your_app_redirect_uri
-    APP_SECRET=your_s3cr3t
-    APP_KEY=your_appkey
+    PASSWORD=微博密码
+    ACCOUNT=微博账号
+    REDIRECT_URI=app的redirect_uri
+    APP_SECRET=app的app_secret
+    APP_KEY=app的app_key
 
     */5 * * * * python /PATH/TO/syclover_auto_weibo.py
 
